@@ -1,0 +1,55 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local flying = false
+local speed = 50
+local bodyGyro, bodyVelocity
+local flyKey = Enum.KeyCode.F
+
+function toggleFly()
+	flying = not flying
+	if flying then
+		bodyGyro = Instance.new("BodyGyro")
+		bodyGyro.P = 9e4
+		bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+		bodyGyro.CFrame = humanoidRootPart.CFrame
+		bodyGyro.Parent = humanoidRootPart
+
+		bodyVelocity = Instance.new("BodyVelocity")
+		bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+		bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+		bodyVelocity.Parent = humanoidRootPart
+	else
+		if bodyGyro then bodyGyro:Destroy() end
+		if bodyVelocity then bodyVelocity:Destroy() end
+	end
+end
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.KeyCode == flyKey then
+		toggleFly()
+	end
+end)
+
+game:GetService("RunService").RenderStepped:Connect(function()
+	if flying and bodyVelocity and bodyGyro then
+		local camCF = workspace.CurrentCamera.CFrame
+		local moveDirection = Vector3.zero
+		if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+			moveDirection = moveDirection + camCF.LookVector
+		end
+		if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+			moveDirection = moveDirection - camCF.LookVector
+		end
+		if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+			moveDirection = moveDirection - camCF.RightVector
+		end
+		if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+			moveDirection = moveDirection + camCF.RightVector
+		end
+		bodyVelocity.Velocity = moveDirection * speed
+		bodyGyro.CFrame = camCF
+	end
+end)
